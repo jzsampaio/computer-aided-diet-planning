@@ -8,6 +8,7 @@ import itertools
 from config import load_ingredients, load_target_macros
 from models import MacroDistribution
 
+w = np.array([4, 4, 9], dtype=np.float64)
 def build_cost_function(
     macros,
     target_macros,
@@ -16,7 +17,7 @@ def build_cost_function(
 ):
     def f(x):
         return sum(
-            (target_macros[m] - sum(x[i] * macros[i][m] for i in range(mix_dim))) ** 2
+            w[m] * (target_macros[m] - sum(x[i] * macros[i][m] for i in range(mix_dim))) ** 2
             for m in range(macros_dim)
         )
     return f
@@ -39,7 +40,7 @@ def optimize(ingredients, selection, target_macros):
         macros_dim=macros_dim,
     )
 
-    bounds = Bounds(np.zeros(mix_dim), np.full(mix_dim, 3.0))
+    bounds = Bounds(np.full(mix_dim, 0.9), np.full(mix_dim, 3.0))
     initial_guess = np.full(mix_dim, 1.0)
     result = minimize(
         f,
@@ -68,12 +69,6 @@ options.sort(
     key=lambda x: x[2].fun,
 )
 
-
-options = [
-    o
-    for o in options
-    if all(c >= 0.05 for c in o[1])
-]
 
 rows = []
 for o in options:
