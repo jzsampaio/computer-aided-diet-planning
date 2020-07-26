@@ -1,11 +1,14 @@
 import numpy as np
+from typing import List
 
 class MacroDistribution:
     def __init__(self, protein, carb, fat):
         self.protein = protein
         self.carb = carb
-        self.Fat = fat
-        self.v = np.array([protein, carb, fat], dtype=np.float64)
+        self.fat = fat
+
+    def macro_array(self) -> List[float]:
+        return [self.protein, self.carb, self.fat]
 
     @staticmethod
     def from_dict(row) -> 'MacroDistribution':
