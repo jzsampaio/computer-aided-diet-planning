@@ -8,7 +8,7 @@ def _print_file(fname):
         print(fin.read())
 
 def load_ingredients():
-    fname = 'carb-db.csv'
+    fname = 'ingredients.csv'
     _print_file(fname)
     with open(fname, 'r') as fp:
         reader = csv.DictReader(fp)
