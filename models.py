@@ -17,20 +17,20 @@ class MacroDistribution:
 
 
 class EqualityConstraint(BaseModel):
-    value: int
+    value: float
 
 
 class MinMaxConstraint(BaseModel):
-    min: int
-    max: int
+    min: float
+    max: float
 
 
 class MinConstraint(BaseModel):
-    min: int
+    min: float
 
 
 class MaxConstraint(BaseModel):
-    max: int
+    max: float
 
 
 Constraint = Union[
@@ -51,39 +51,10 @@ class MacroConstraint(BaseModel):
     carb: EqualityConstraint
     fat: EqualityConstraint
 
+    def as_array(self) -> List[float]:
+        return [self.protein.value, self.carb.value, self.fat.value]
+
 
 class DietConstraints(BaseModel):
     ingredients: List[IngredientConstraint]
     macros: MacroConstraint
-
-
-o = {
-    "ingredients": [
-        {
-        "name": "Frango",
-        "constraint": {
-            "value": 180
-            }
-        },
-        {
-        "name": "*",
-        "constraint": {
-            "min": 90
-            }
-        }
-    ],
-    "macros": {
-        "protein": {
-            "value": 90
-        },
-        "carb": {
-            "value": 90
-        },
-        "fat": {
-            "value": 90
-        },
-    }
-}
-
-x = DietConstraints(**o)
-print(x.dict())

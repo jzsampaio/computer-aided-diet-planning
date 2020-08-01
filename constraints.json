@@ -1,0 +1,28 @@
+{
+    "ingredients": [
+        {
+            "name": "Frango",
+            "constraint": {
+                "value": 1.80
+            }
+        },
+        {
+            "name": "*",
+            "constraint": {
+                "min": 0.50,
+                "max": 3.00
+            }
+        }
+    ],
+    "macros": {
+        "protein": {
+            "value": 52.53
+        },
+        "carb": {
+            "value": 42.24
+        },
+        "fat": {
+            "value": 5.93
+        }
+    }
+}

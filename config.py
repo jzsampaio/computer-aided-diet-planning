@@ -1,7 +1,7 @@
 import csv
 import json
 
-from models import MacroDistribution
+from models import MacroDistribution, DietConstraints
 
 def _print_file(fname):
     with open(fname, 'r') as fin:
@@ -17,8 +17,8 @@ def load_ingredients():
             for row in reader
         }
 
-def load_target_macros():
-    fname = 'target-macros.json'
+def load_constraints():
+    fname = 'constraints.json'
     _print_file(fname)
     with open(fname, 'r') as fp:
-        return MacroDistribution.from_dict(json.load(fp))
+        return DietConstraints(**json.load(fp))

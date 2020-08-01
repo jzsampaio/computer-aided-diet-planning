@@ -1,19 +1,31 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
+import itertools
 
 import numpy as np
-from scipy.optimize import minimize
-from scipy.optimize import Bounds
-from scipy.optimize import SR1
-from scipy.optimize import LinearConstraint
+from scipy.optimize import (
+    Bounds,
+    LinearConstraint,
+    SR1,
+    minimize,
+)
 from pydantic import BaseModel
 from tabulate import tabulate
 
-import itertools
-from config import load_ingredients, load_target_macros
-from models import MacroDistribution
+from config import load_ingredients, load_constraints
+from models import (
+    Constraint,
+    EqualityConstraint,
+    IngredientConstraint,
+    MacroDistribution,
+    MaxConstraint,
+    MinConstraint,
+    MinMaxConstraint,
+)
 
 class FindOptimalMixRequest(BaseModel):
     macros: List[List[float]]
+    min_constraints: List[Optional[float]]
+    max_constraints: List[Optional[float]]
     target_macros: List[float]
     mix_dim: int
     macros_dim: int
@@ -23,6 +35,16 @@ class OptimalMixResponse(BaseModel):
     optimal_mix: List[float]
     macros: List[float]
     square_error: float
+
+
+class BestMixForEachCombinationRequest(BaseModel):
+    ingredients: Dict[str, List[float]]
+    target_macros: List[float]
+    ingredient_constraints: List[IngredientConstraint]
+
+
+class BestMixForEachCombinationResponse(BaseModel):
+    mixes: List[Tuple[Tuple[str, ...], OptimalMixResponse]]
 
 
 MACRO_WEIGHTS = np.array([4, 4, 9], dtype=np.float64)
@@ -54,7 +76,10 @@ def find_optimal_mix(request: FindOptimalMixRequest) -> OptimalMixResponse:
         mix_dim=request.mix_dim,
         macros_dim=request.macros_dim,
     )
-    bounds = Bounds(np.full(request.mix_dim, 0.9), np.full(request.mix_dim, 3.0))
+    bounds = Bounds(
+        np.array(request.min_constraints, dtype=np.float64),
+        np.array(request.max_constraints, dtype=np.float64),
+    )
     initial_guess = np.full(request.mix_dim, 1.0)
     result = minimize(
         f,
@@ -79,27 +104,64 @@ def find_optimal_mix(request: FindOptimalMixRequest) -> OptimalMixResponse:
     )
 
 
-class BestMixForEachCombinationRequest(BaseModel):
-    ingredients: Dict[str, List[float]]
-    target_macros: List[float]
+def _constraint_to_min_max(
+        c: Constraint,
+) -> Tuple[Optional[float], Optional[float]]:
+    if isinstance(c, MinConstraint):
+        return (c.min, np.inf)
+    if isinstance(c, MaxConstraint):
+        return (-np.inf, c.max)
+    if isinstance(c, MinMaxConstraint):
+        return (c.min, c.max)
+    elif isinstance(c, EqualityConstraint):
+        return (c.value, c.value)
+    else:
+        __import__('pdb').set_trace()
+        raise "Not implemented!"
 
 
-class BestMixForEachCombinationResponse(BaseModel):
-    mixes: List[Tuple[Tuple[str, ...], OptimalMixResponse]]
+def _to_min_max_constraint_arrays(
+    ingredient_constraints: List[IngredientConstraint],
+    selection: Tuple[str, ...],
+) -> Tuple[List[Optional[float]], List[Optional[float]]]:
+    min_list = [None for _ in selection]
+    max_list = [None for _ in selection]
+
+    constraint_dict = {
+        c.name: c.constraint
+        for c in ingredient_constraints
+    }
+
+    if '*' in constraint_dict:
+        general_constraint = constraint_dict['*']
+        m, M = _constraint_to_min_max(general_constraint)
+        min_list = [m for _ in selection]
+        max_list = [M for _ in selection]
+
+    for idx, ingredient in enumerate(selection):
+        if ingredient not in constraint_dict:
+            continue
+        c = constraint_dict[ingredient]
+        min_list[idx], max_list[idx] = _constraint_to_min_max(c)
+
+    return min_list, max_list
 
 
 def best_mix_for_each_combination(
-        request: BestMixForEachCombinationRequest
+    request: BestMixForEachCombinationRequest
 ) -> BestMixForEachCombinationResponse:
     ingredient_names = request.ingredients.keys()
     mixes = []
     for mix_dim in range(2, len(ingredient_names) + 1):
         for selection in itertools.combinations(ingredient_names, mix_dim):
+            min_constraints, max_constraints = _to_min_max_constraint_arrays(request.ingredient_constraints, selection)
             find_optimal_request = FindOptimalMixRequest(
                 macros=[request.ingredients[k] for k in selection],
                 target_macros=request.target_macros,
                 mix_dim=mix_dim,
                 macros_dim = len(request.target_macros),
+                min_constraints=min_constraints,
+                max_constraints=max_constraints,
             )
             mixes.append(
                 (selection, find_optimal_mix(find_optimal_request))
@@ -156,12 +218,13 @@ def report2(
 
 if __name__ == "__main__":
     ingredients = load_ingredients()
-    target_macros = load_target_macros()
+    constraints = load_constraints()
     ingredient_names = ingredients.keys()
 
     request = BestMixForEachCombinationRequest(
         ingredients={k: v.macro_array() for k, v in ingredients.items()},
-        target_macros=target_macros.macro_array()
+        target_macros=constraints.macros.as_array(),
+        ingredient_constraints=constraints.ingredients,
     )
     response = best_mix_for_each_combination(request)
 
