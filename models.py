@@ -1,19 +1,10 @@
-import numpy as np
-from typing import List, Union
+from typing import (
+    List,
+    Union,
+    Tuple,
+)
+
 from pydantic import BaseModel
-
-class MacroDistribution:
-    def __init__(self, protein, carb, fat):
-        self.protein = protein
-        self.carb = carb
-        self.fat = fat
-
-    def macro_array(self) -> List[float]:
-        return [self.protein, self.carb, self.fat]
-
-    @staticmethod
-    def from_dict(row) -> 'MacroDistribution':
-        return MacroDistribution(row['Protein'], row['Carb'], row['Fat'])
 
 
 class EqualityConstraint(BaseModel):
@@ -46,15 +37,27 @@ class IngredientConstraint(BaseModel):
     constraint: Constraint
 
 
+MacroList = Tuple[float, float, float]
+
+
 class MacroConstraint(BaseModel):
     protein: EqualityConstraint
     carb: EqualityConstraint
     fat: EqualityConstraint
 
-    def as_array(self) -> List[float]:
+    def as_array(self) -> MacroList:
         return [self.protein.value, self.carb.value, self.fat.value]
 
 
+class MacroDistribution(BaseModel):
+    protein: float
+    carb: float
+    fat: float
+
+    def as_array(self) -> MacroList:
+        return [self.protein, self.carb, self.fat]
+
+
 class DietConstraints(BaseModel):
-    ingredients: List[IngredientConstraint]
-    macros: MacroConstraint
+    ingredient_constraints: List[IngredientConstraint]
+    target_macros: MacroDistribution

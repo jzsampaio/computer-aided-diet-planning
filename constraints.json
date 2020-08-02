@@ -1,5 +1,5 @@
 {
-    "ingredients": [
+    "ingredient_constraints": [
         {
             "name": "Frango",
             "constraint": {
@@ -14,15 +14,9 @@
             }
         }
     ],
-    "macros": {
-        "protein": {
-            "value": 52.53
-        },
-        "carb": {
-            "value": 42.24
-        },
-        "fat": {
-            "value": 5.93
-        }
+    "target_macros": {
+        "protein": 52.53,
+        "carb": 42.24,
+        "fat": 5.93
     }
 }
