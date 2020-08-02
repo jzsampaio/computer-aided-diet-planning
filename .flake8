@@ -1,0 +1,8 @@
+[flake8]
+exclude =
+    .git,
+    __pycache__,
+    venv
+max-complexity = 10
+show-source = True
+statistics = True

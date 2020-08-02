@@ -126,9 +126,9 @@ def _to_min_max_constraint_arrays(
     }
 
     general_constraint = constraint_dict.get('*', DEFAULT_GENERAL_INGREDIENT_CONSTRAINT)
-    m, M = _constraint_to_min_max(general_constraint)
-    min_list = [m for _ in selection]
-    max_list = [M for _ in selection]
+    min_value, max_value = _constraint_to_min_max(general_constraint)
+    min_list = [min_value for _ in selection]
+    max_list = [max_value for _ in selection]
 
     for idx, ingredient in enumerate(selection):
         if ingredient not in constraint_dict:
