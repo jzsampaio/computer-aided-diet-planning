@@ -1,12 +1,6 @@
 {
     "ingredient_constraints": [
         {
-            "name": "Frango",
-            "constraint": {
-                "value": 1.80
-            }
-        },
-        {
             "name": "*",
             "constraint": {
                 "min": 0.50,
